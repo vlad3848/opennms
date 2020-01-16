@@ -39,70 +39,77 @@ import org.opennms.core.utils.SystemInfoUtils;
  * for usage in Java, Spring, or Camel code. In the constructor, location is
  * an optional parameter. If it is null, then the names that are generated
  * will not include a field for the location.
- *
+ * <p>
  * Generated queue names are of the form:
- *    $instanceid.$location.$component.$endpoint
- *    $instanceid.$component.$endpoint
- *
+ * $instanceid.$location.$component.$endpoint
+ * $instanceid.$component.$endpoint
+ * <p>
  * i.e.:
- *    OpenNMS.HQ.RPC.SNMP
- *    OpenNMS.Syslogd.BroadcastSyslog
+ * OpenNMS.HQ.RPC.SNMP
+ * OpenNMS.Syslogd.BroadcastSyslog
  *
  * @author jwhite
  * @author Seth
  */
 public class JmsQueueNameFactory {
 
-	private static final String NAME_FORMAT_WITH_LOCATION = "%s.%s.%s.%s";
-	private static final String NAME_FORMAT_WITHOUT_LOCATION = "%s.%s.%s";
+    private static final String NAME_FORMAT_WITH_LOCATION = "%s.%s.%s.%s";
+    private static final String NAME_FORMAT_WITHOUT_LOCATION = "%s.%s.%s";
+    private static final String NAME_FORMAT_WITHOUT_ENDPOINT = "%s.%s";
 
-	private final String m_component;
-	private final String m_endpoint;
-	private final String m_location;
+    private final String m_component;
+    private final String m_location;
+    private String m_endpoint;
 
-	public JmsQueueNameFactory(String component, String endpoint, String location) {
-		m_component = Objects.requireNonNull(component);
-		m_endpoint = Objects.requireNonNull(endpoint);
-		m_location = location;
-	}
+    public JmsQueueNameFactory(String component, String endpoint, String location) {
+        m_component = Objects.requireNonNull(component);
+        m_endpoint = endpoint;
+        m_location = location;
+    }
 
-	public JmsQueueNameFactory(String component, String endpoint) {
-		this(component, endpoint, null);
-	}
+    public JmsQueueNameFactory(String component, String endpoint) {
+        this(component, endpoint, null);
+    }
 
-	public String getLocation() {
-		return m_location;
-	}
+    public String getLocation() {
+        return m_location;
+    }
 
-	public String getComponent() {
-		return m_component;
-	}
+    public String getComponent() {
+        return m_component;
+    }
 
-	public String getName() {
-		if (m_location == null) {
-			return getNameWithoutLocation();
-		} else {
-			return getNameWithLocation(m_location);
-		}
-	}
+    public String getName() {
+        if (m_location == null) {
+            return getNameWithoutLocation();
+        } else {
+            return getNameWithLocation(m_location);
+        }
+    }
 
-	public String getNameWithoutLocation() {
-		return String.format(NAME_FORMAT_WITHOUT_LOCATION, SystemInfoUtils.getInstanceId(), m_component, m_endpoint);
-	}
+    public String getNameWithoutLocation() {
+        if (m_endpoint == null) {
+            return String.format(NAME_FORMAT_WITHOUT_ENDPOINT, SystemInfoUtils.getInstanceId(), m_component);
+        }
+        return String.format(NAME_FORMAT_WITHOUT_LOCATION, SystemInfoUtils.getInstanceId(), m_component, m_endpoint);
+    }
 
-	public String getNameWithLocation(String location) {
-		return String.format(NAME_FORMAT_WITH_LOCATION, SystemInfoUtils.getInstanceId(), location, m_component, m_endpoint);
-	}
+    public String getNameWithLocation(String location) {
+        if (m_endpoint == null) {
+            return String.format(NAME_FORMAT_WITHOUT_LOCATION, SystemInfoUtils.getInstanceId(), m_location, m_component);
+        }
+        return String.format(NAME_FORMAT_WITH_LOCATION, SystemInfoUtils.getInstanceId(), location, m_component, m_endpoint);
+    }
 
-	/**
-	 * This method will return both queue name variants in a {@link Properties}
-	 * list so that you can easily use it with a {@link PropertiesComponent} in
-	 * a Spring context.
-	 */
-	public Properties getProperties() {
-		Properties retval = new Properties();
-		retval.setProperty("queueName", getName());
-		retval.setProperty("queueNameWithoutLocation", getNameWithoutLocation());
-		return retval;
-	}
+    /**
+     * This method will return both queue name variants in a {@link Properties}
+     * list so that you can easily use it with a {@link PropertiesComponent} in
+     * a Spring context.
+     */
+    public Properties getProperties() {
+        Properties retval = new Properties();
+        retval.setProperty("queueName", getName());
+        retval.setProperty("queueNameWithoutLocation", getNameWithoutLocation());
+        return retval;
+    }
 }

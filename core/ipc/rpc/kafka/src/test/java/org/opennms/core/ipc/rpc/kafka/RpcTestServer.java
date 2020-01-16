@@ -29,11 +29,8 @@
 package org.opennms.core.ipc.rpc.kafka;
 
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.opennms.core.camel.JmsQueueNameFactory;
 import org.opennms.core.ipc.common.kafka.KafkaConfigProvider;
-import org.opennms.core.ipc.common.kafka.KafkaRpcConstants;
-import org.opennms.core.ipc.common.kafka.Utils;
-import org.opennms.core.ipc.rpc.kafka.model.RpcMessageProtos;
+import org.opennms.core.ipc.rpc.kafka.model.RpcMessageProto;
 import org.opennms.core.rpc.api.RpcModule;
 import org.opennms.core.rpc.api.RpcRequest;
 import org.opennms.core.rpc.api.RpcResponse;
@@ -41,7 +38,7 @@ import org.opennms.core.tracing.api.TracerRegistry;
 import org.opennms.distributed.core.api.MinionIdentity;
 
 /**
- * This overrides @{@link org.opennms.core.ipc.rpc.kafka.KafkaRpcServerManager.KafkaConsumerRunner#sendMessageToKafka(RpcMessageProtos.RpcMessage, String, String)}
+ * This overrides @{@link org.opennms.core.ipc.rpc.kafka.KafkaRpcServerManager.KafkaConsumerRunner#sendMessageToKafka(RpcMessageProto, String, String)}
  * to send duplicate message or skip a chunk in between.
  */
 public class RpcTestServer extends KafkaRpcServerManager {
@@ -60,16 +57,16 @@ public class RpcTestServer extends KafkaRpcServerManager {
     class KafkaServerConsumer extends KafkaRpcServerManager.KafkaConsumerRunner {
 
         private KafkaServerConsumer(RpcModule<RpcRequest, RpcResponse> rpcModule, KafkaConsumer<String, byte[]> consumer, String topic) {
-            super(rpcModule, consumer, topic);
+            super(consumer, topic);
         }
 
         @Override
-        void sendMessageToKafka(RpcMessageProtos.RpcMessage rpcMessage, String topic, String responseAsString) {
-            if(skipChunks && rpcMessage.getCurrentChunkNumber() == 2) {
+        void sendMessageToKafka(RpcMessageProto rpcMessage, String topic, String responseAsString) {
+            if (skipChunks && rpcMessage.getCurrentChunkNumber() == 2) {
                 skipChunks = true;
             }
 
-            if(!skipChunks) {
+            if (!skipChunks) {
                 super.sendMessageToKafka(rpcMessage, topic, responseAsString);
                 skippedOrDuplicated = true;
             }
@@ -81,7 +78,7 @@ public class RpcTestServer extends KafkaRpcServerManager {
 
     }
 
-    @Override
+   /* @Override
     protected void startConsumerForModule(RpcModule<RpcRequest, RpcResponse> rpcModule) {
         final JmsQueueNameFactory topicNameFactory = new JmsQueueNameFactory(KafkaRpcConstants.RPC_REQUEST_TOPIC_NAME, rpcModule.getId(),
                 minionIdentity.getLocation());
@@ -96,7 +93,7 @@ public class RpcTestServer extends KafkaRpcServerManager {
         KafkaConsumerRunner kafkaConsumerRunner = getRpcModuleConsumers().remove(rpcModule);
         kafkaConsumerRunner.shutdown();
     }
-
+*/
     public void setSkipChunks(boolean skipChunks) {
         this.skipChunks = skipChunks;
     }
